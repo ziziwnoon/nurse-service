@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8">
+  <title>تست چت سوکت</title>
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+</head>
+<body>
+  <h2>تست چت ساده با WebSocket</h2>
+
+  <label>توکن JWT: <input type="text" id="tokenInput" size="80"
+    value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2ODFlMzBlNTg1NWFkNzQ3NzRhYmVhY2EiLCJyb2xlIjoicGF0aWVudCIsImlhdCI6MTc0Njg3NDkwNCwiZXhwIjoxNzQ2ODc4NTA0fQ._PgoV2YE3VijpjzRfb93zLPnyRvWHOuTYjv2knWo3d0"></label><br>
+  <label>گیرنده: <input type="text" id="receiverId" value="456"></label><br>
+  <label>متن پیام: <input type="text" id="messageContent" value="سلام پرستار!"></label><br>
+
+  <button onclick="connect()">اتصال</button>
+  <button onclick="sendMessage()">ارسال پیام</button>
+
+  <hr>
+  <div id="messages"></div>
+
+  <script>
+    let socket;
+
+    function connect() {
+      const token = document.getElementById('tokenInput').value;
+
+      socket = io('http://localhost:5000', {
+        auth: { token },
+      });
+
+      socket.on("connect", () => {
+        console.log("وصل شد:", socket.id);
+        appendMessage("✅ اتصال برقرار شد");
+      });
+
+      socket.on("receive_message", (data) => {
+        console.log("پیام دریافت شد:", data);
+        appendMessage(`📩 پیام از ${data.senderId}: ${data.content}`);
+      });
+
+      socket.on("disconnect", () => {
+        appendMessage("❌ قطع اتصال");
+      });
+    }
+
+    function sendMessage() {
+      const receiverId = document.getElementById('receiverId').value;
+      const content = document.getElementById('messageContent').value;
+
+      if (!socket || !socket.connected) {
+        appendMessage("⛔ ابتدا اتصال را برقرار کنید.");
+        return;
+      }
+
+      socket.emit("send_message", { receiverId, content });
+      appendMessage(`✅ ارسال شد به ${receiverId}: ${content}`);
+    }
+
+    function appendMessage(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      document.getElementById('messages').appendChild(div);
+    }
+  </script>
+</body>
+</html>
